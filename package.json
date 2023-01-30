@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently NODE_ENV=development \"npm run dev-server\" \"npm run dev-worker\"",
-    "start": "concurrently NODE_ENV=production \"npm run start-server\" \"npm run start-worker\"",
+    "start": "concurrently NODE_ENV=production npm:start-server npm:start-worker",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev-server": "cross-env nodemon server.js --watch lib/* --watch .",
     "dev-worker": "cross-env nodemon celeryWorker.js",
