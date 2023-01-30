@@ -1,0 +1,37 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently NODE_ENV=development \"npm run dev-server\" \"npm run dev-worker\"",
+    "start": "concurrently NODE_ENV=production \"npm run start-server\" \"npm run start-worker\"",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev-server": "cross-env nodemon server.js --watch lib/* --watch .",
+    "dev-worker": "cross-env nodemon celeryWorker.js",
+    "start-server": "cross-env node server.js",
+    "start-worker": "cross-env node celeryWorker.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.17.16",
+    "@types/node-mailjet": "^3.3.9",
+    "@types/validator": "^13.7.11",
+    "axios": "^1.2.6",
+    "body-parser": "^1.20.1",
+    "celery-node": "^0.5.9",
+    "celery-ts": "^1.1.1",
+    "concurrently": "^7.6.0",
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0",
+    "node-mailjet": "^6.0.1",
+    "nodemailer": "^6.9.1",
+    "nodemon": "^2.0.20",
+    "validator": "^13.7.0"
+  }
+}
