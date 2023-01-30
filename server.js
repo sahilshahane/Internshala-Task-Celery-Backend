@@ -76,6 +76,12 @@ app.post('/user-form', async (req, res) => {
   }
 })
 
+app.all('/', (req, res) => {
+  res
+    .status(200)
+    .send(`Server is running! Request to <a href='/user-form'>/user-form</a> `)
+})
+
 const SERVER_PORT = process.env.SERVER_PORT || 3001
 
 app.listen(SERVER_PORT, () => {
