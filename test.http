@@ -1,5 +1,5 @@
 ### SEND USER DATA
-POST http://localhost:3001/user-form HTTP/1.1
+POST https://internshala-task-celery-backend-production.up.railway.app:3001/user-form HTTP/1.1
 Content-Type: application/json
 
 {
