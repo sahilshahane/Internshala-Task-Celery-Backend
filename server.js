@@ -2,48 +2,29 @@
 require('dotenv').config()
 
 const express = require('express')
-const celery = require('celery-node')
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 
-const celeryTasks = require('./lib/celery-tasks')
+const {
+  validateEmailTask,
+  validatePhoneNoTask,
+} = require('./lib/celery-helpers')
 const { sendEmail } = require('./lib/email')
+const { connectToDB, addUserDetail, getUserDetails } = require('./lib/database')
+const { CUSTOM_ERROR } = require('./lib/errors')
+
+const { validatePhoneno, validateEmail } = require('./celeryWorker') /// REMOVE AT THE END
+
+connectToDB()
 
 const app = express()
 
+app.set('trust proxy', true)
 app.use(morgan('tiny'))
 app.use(cors())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
-
-const celeryClient = celery.createClient(
-  process.env.BROKER_URL,
-  process.env.BACKEND_URL
-)
-
-/** Celery Task : validates phone no
- * @param phoneno - String
- * @returns Boolean
- */
-
-const validatePhoneNoTask = celeryClient.createTask(
-  celeryTasks.VALIDATE_PHONE_NO
-)
-
-/** Celery Task : validates email
- * @param email - String
- * @returns Boolean
- */
-const validateEmailTask = celeryClient.createTask(celeryTasks.VALIDATE_EMAIL)
-
-// name, date of birth, email, phone number
-
-class INVALID_DATA extends Error {}
-
-class EMAIL_ERROR extends Error {
-  message = 'Server Error : Failed to send email'
-}
 
 app.post('/user-form', async (req, res) => {
   const { name, dob, email, phoneNo } = req.body
@@ -53,33 +34,55 @@ app.post('/user-form', async (req, res) => {
         'Please provide valid name, date of birth, email, phoneNo'
       )
 
-    const isPhoneValid = await validatePhoneNoTask.applyAsync([phoneNo]).get()
-    const isEmailValid = await validateEmailTask.applyAsync([email])
+    // const phoneDetails = await validatePhoneNoTask.applyAsync([phoneNo]).get()
+    // const isEmailValid = await validateEmailTask.applyAsync([email])
+    const phoneDetails = validatePhoneno(phoneNo)
+    const isEmailValid = validateEmail(email)
 
-    if (!isPhoneValid) throw new INVALID_DATA('Invalid : Phone no.')
-    if (!isEmailValid) throw new INVALID_DATA('Invalid : Email')
+    if (!phoneDetails)
+      throw new CUSTOM_ERROR('Provided Phone no. is invalid', 400)
+
+    if (!isEmailValid) throw new CUSTOM_ERROR('Provided Email is invalid', 400)
+
+    await addUserDetail({
+      name,
+      dob: Date.parse(dob),
+      email,
+      phoneno: phoneDetails,
+    })
 
     const isEmailSent = await sendEmail(
       email,
       name,
       'Test Mail from Sahil Shahane',
       'Test Mail'
-    )?.Messages[0]
+    )
 
     if (!isEmailSent) throw new EMAIL_ERROR()
 
-    throw new res.status(200).send(
-      `User Form Submitted | Email sent to ${email}`
-    )
-  } catch (error) {
-    res.status(500).send(`Something went wrong! ${error}`)
+    res.status(200).send(`User Form Submitted | Email sent to ${email}`)
+  } catch (err) {
+    if (err instanceof CUSTOM_ERROR) res.status(err.code).send(err.message)
+    else res.status(500).send(`Something went wrong!`)
+  }
+})
+
+app.get('/user-form', async (req, res) => {
+  const { pageNo, per_page, sortBy } = req.query
+
+  try {
+    res.status(200).json(await getUserDetails(pageNo, per_page))
+  } catch (err) {
+    res.status(500).send('Something went wrong!')
   }
 })
 
 app.all('/', (req, res) => {
   res
     .status(200)
-    .send(`Server is running! Request to <a href='/user-form'>/user-form</a> `)
+    .send(
+      `Server is running! Do a POST request on <a href='/user-form'>/user-form</a> to see the action :)`
+    )
 })
 
 const SERVER_PORT = process.env.SERVER_PORT || 3001

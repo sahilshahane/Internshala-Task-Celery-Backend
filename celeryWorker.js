@@ -15,11 +15,15 @@ const celeryWorker = celery.createWorker(
 const validatePhoneno = (phoneno) => {
   // REGEX + Named Capturing  | requires EcmaScript / JavaScript
   // ^(?<country_code>((\+\d{1,}\s+)|()))(?<phoneno>(\d{10}))$
-  const isValid = String(phoneno)
+  const phoneDetails = String(phoneno)
     .trim()
-    .match(/^((\+\d{1,}\s+)|())(\d{10})$/)
+    .match(/^(?<countryCode>((\+\d{1,}\s+)|()))(?<number>(\d{10}))$/)
 
-  return Boolean(isValid)
+  if (!phoneDetails) return null
+  return {
+    countryCode: phoneDetails.groups['countryCode'],
+    number: Number(phoneDetails.groups['number']),
+  }
 }
 
 const validateEmail = (email) => {
@@ -32,3 +36,5 @@ celeryWorker.register(celeryTasks.VALIDATE_EMAIL, validateEmail)
 
 // START WORKER
 celeryWorker.start()
+
+module.exports = { validatePhoneno, validateEmail }
