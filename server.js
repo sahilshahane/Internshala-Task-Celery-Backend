@@ -88,5 +88,5 @@ app.all('/', (req, res) => {
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
-  console.log(`Server has been started on port http://localhost:${SERVER_PORT}`)
+  console.log(`Server has been started on port http://localhost:${PORT}`)
 })
