@@ -39,5 +39,3 @@ celeryWorker.register(celeryTasks.VALIDATE_EMAIL, validateEmail)
 
 // START WORKER
 celeryWorker.start()
-
-module.exports = { validatePhoneno, validateEmail }
