@@ -5,13 +5,19 @@ const express = require('express')
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
+const moment = require('moment')
 
 const {
   validateEmailTask,
   validatePhoneNoTask,
 } = require('./lib/celery-helpers')
 const { sendEmail } = require('./lib/email')
-const { connectToDB, addUserDetail, getUserDetails } = require('./lib/database')
+const {
+  connectToDB,
+  addUserDetail,
+  getUserDetails,
+  getTotalUserEntries,
+} = require('./lib/database')
 const { CUSTOM_ERROR } = require('./lib/errors')
 
 const { validatePhoneno, validateEmail } = require('./celeryWorker') /// REMOVE AT THE END
@@ -71,8 +77,36 @@ app.get('/user-form', async (req, res) => {
   const { pageNo, per_page, sortBy } = req.query
 
   try {
-    res.status(200).json(await getUserDetails(pageNo, per_page))
+    const details = await getUserDetails(pageNo, per_page)
+
+    console.log(
+      details.map((val) => ({
+        ...val,
+        dob: moment(val.dob).format('D/MM/YYYY'),
+      }))
+    )
+
+    res.status(200).json(
+      details.map((val) => ({
+        name: val.name,
+        email: val.email,
+        phoneNo: `+${val.phoneno.countryCode + ' ' || ''}${val.phoneno.number}`,
+        dob: moment(val.dob).format('D/MM/YYYY'),
+      }))
+    )
   } catch (err) {
+    console.error(err)
+    res.status(500).send('Something went wrong!')
+  }
+})
+
+app.get('/total-user-entries', async (req, res) => {
+  try {
+    const data = await getTotalUserEntries()
+
+    res.status(200).send(String(data))
+  } catch (err) {
+    console.error(err)
     res.status(500).send('Something went wrong!')
   }
 })
