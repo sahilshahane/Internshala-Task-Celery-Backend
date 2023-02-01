@@ -1,12 +1,12 @@
 ### SEND USER DATA
-POST https://internshala-task-celery-backend-production.up.railway.app/user-form HTTP/1.1
+POST http://localhost:3001/user-form HTTP/1.1
 Content-Type: application/json
 
 {
  "name": "sample",
  "dob" : "10 jan 2002",
- "email" : "fiwic63217@cshotunai.com",
- "phoneNo" : "+1 1111221211"
+ "email" : "fiwics63217@chotunai.com",
+ "phoneNo" : "+1 1111221216"
 }
 
 

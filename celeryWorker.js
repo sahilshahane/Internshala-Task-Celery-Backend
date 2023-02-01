@@ -13,6 +13,8 @@ const celeryWorker = celery.createWorker(
 )
 
 const validatePhoneno = (phoneno) => {
+  console.log('Validate Phone no. Task Received')
+
   // REGEX + Named Capturing  | requires EcmaScript / JavaScript
   // ^(?<country_code>((\+\d{1,}\s+)|()))(?<phoneno>(\d{10}))$
   const phoneDetails = String(phoneno)
@@ -27,6 +29,7 @@ const validatePhoneno = (phoneno) => {
 }
 
 const validateEmail = (email) => {
+  console.log('Validate Email Task Received')
   return validator.isEmail(email)
 }
 

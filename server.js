@@ -20,30 +20,27 @@ const {
 } = require('./lib/database')
 const { CUSTOM_ERROR } = require('./lib/errors')
 
-const { validatePhoneno, validateEmail } = require('./celeryWorker') /// REMOVE AT THE END
-
 connectToDB()
 
 const app = express()
 
-app.set('trust proxy', true)
-app.use(morgan('tiny'))
 app.use(cors())
+// app.set('trust proxy', true)
+app.use(morgan('tiny'))
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 app.post('/user-form', async (req, res) => {
   const { name, dob, email, phoneNo } = req.body
+
   try {
     if (!name || !dob || !email || !phoneNo)
-      throw new INVALID_DATA(
+      throw new CUSTOM_ERROR(
         'Please provide valid name, date of birth, email, phoneNo'
       )
 
-    // const phoneDetails = await validatePhoneNoTask.applyAsync([phoneNo]).get()
-    // const isEmailValid = await validateEmailTask.applyAsync([email])
-    const phoneDetails = validatePhoneno(phoneNo)
-    const isEmailValid = validateEmail(email)
+    const phoneDetails = await validatePhoneNoTask.applyAsync([phoneNo]).get()
+    const isEmailValid = await validateEmailTask.applyAsync([email]).get()
 
     if (!phoneDetails)
       throw new CUSTOM_ERROR('Provided Phone no. is invalid', 400)
@@ -54,45 +51,45 @@ app.post('/user-form', async (req, res) => {
       name,
       dob: Date.parse(dob),
       email,
-      phoneno: phoneDetails,
+      phoneNo: phoneDetails,
     })
 
     const isEmailSent = await sendEmail(
       email,
       name,
-      'Test Mail from Sahil Shahane',
-      'Test Mail'
+      'Hi from Sahil Shahane | Task Completed',
+      'Hi, this is a test email for Internshala Task from Stack Fusion'
     )
 
-    if (!isEmailSent) throw new EMAIL_ERROR()
+    if (!isEmailSent)
+      throw new CUSTOM_ERROR('Something went Wrong while sending email')
 
     res.status(200).send(`User Form Submitted | Email sent to ${email}`)
   } catch (err) {
+    console.error(err)
+
     if (err instanceof CUSTOM_ERROR) res.status(err.code).send(err.message)
     else res.status(500).send(`Something went wrong!`)
   }
 })
 
 app.get('/user-form', async (req, res) => {
-  const { pageNo, per_page, sortBy } = req.query
+  const { pageNo, per_page } = req.query
 
   try {
     const details = await getUserDetails(pageNo, per_page)
 
-    console.log(
-      details.map((val) => ({
-        ...val,
-        dob: moment(val.dob).format('D/MM/YYYY'),
-      }))
-    )
-
     res.status(200).json(
-      details.map((val) => ({
-        name: val.name,
-        email: val.email,
-        phoneNo: `+${val.phoneno.countryCode + ' ' || ''}${val.phoneno.number}`,
-        dob: moment(val.dob).format('D/MM/YYYY'),
-      }))
+      details.map((val) => {
+        return {
+          name: val.name,
+          email: val.email,
+          phoneNo:
+            (val.phoneNo?.countryCode ? `+${val.phoneNo.countryCode}` : '') +
+            val.phoneNo?.number,
+          dob: moment(val.dob).format('D/MM/YYYY'),
+        }
+      })
     )
   } catch (err) {
     console.error(err)
